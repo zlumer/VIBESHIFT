@@ -52,6 +52,7 @@ function CreateContent() {
     setLoading(true);
     setError(null);
     setGameUrl(null);
+    setGeneratedGameId(null);
 
     try {
       let result;
@@ -139,6 +140,91 @@ function CreateContent() {
     }
   };
 
+  if (!remixId) {
+    return (
+      <div className="flex flex-col h-screen bg-black text-white p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Vibecoding Studio</h1>
+          <div className="flex gap-4 items-center">
+              <button onClick={() => router.push('/')} className="text-sm text-gray-400 hover:text-white">Cancel</button>
+              <WalletButton />
+          </div>
+        </div>
+        
+        <div className="flex gap-2 mb-4">
+          <input 
+            id="prompt-input"
+            type="text" 
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Describe your game..."
+            className="flex-1 bg-gray-800 border border-gray-700 rounded p-2 text-white"
+            disabled={loading || publishing}
+          />
+          <button 
+            onClick={handleGenerate}
+            disabled={loading || publishing || !prompt}
+            className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded font-bold disabled:opacity-50"
+          >
+            {loading ? 'Cooking...' : 'Vibe Code'}
+          </button>
+        </div>
+
+        <div id="debug-gameurl" style={{fontSize:'10px'}}>{gameUrl || "EMPTY"}</div>
+        <div id="debug-gameid" style={{fontSize:'10px'}}>{generatedGameId || "EMPTY"}</div>
+        <div id="debug-loading" style={{fontSize:'10px'}}>{loading ? "TRUE" : "FALSE"}</div>
+        {gameUrl && (
+          <div id="publish-controls" style={{ display: 'flex' }} className="gap-2 mb-4 items-center border border-blue-500 p-2 bg-gray-900">
+              <input 
+                  id="game-title-input"
+                  type="text"
+                  placeholder="Game Title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="bg-gray-800 border border-gray-700 rounded p-2 text-white text-sm"
+              />
+              <button 
+                  id="publish-button"
+                  onClick={handlePublish}
+                  disabled={publishing || !publicKey}
+                  className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded font-bold text-sm disabled:opacity-50"
+              >
+                  {publishing ? 'Publishing...' : 'Publish ($1)'}
+              </button>
+              {!publicKey && <p id="no-wallet-msg" className="text-xs text-yellow-500">Connect wallet to publish</p>}
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-900/50 text-red-200 p-2 rounded mb-4 text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="flex-1 bg-gray-900 rounded overflow-hidden border border-gray-800 relative shadow-2xl">
+          {gameUrl ? (
+            <iframe 
+              src={gameUrl} 
+              className="w-full h-full border-none"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
+              {loading ? (
+                  <div className="animate-pulse flex flex-col items-center">
+                      <div className="w-12 h-12 bg-purple-600 rounded-full mb-4"></div>
+                      <p>Writing your vibe into code...</p>
+                  </div>
+              ) : (
+                  <p>Enter a prompt to generate a game.</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen bg-black text-white p-4">
       <div className="flex justify-between items-center mb-4">
@@ -153,6 +239,7 @@ function CreateContent() {
       
       <div className="flex gap-2 mb-4">
         <input 
+          id="prompt-input"
           type="text" 
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -169,8 +256,11 @@ function CreateContent() {
         </button>
       </div>
 
+      <div id="debug-gameurl" style={{fontSize:'10px'}}>{gameUrl || "EMPTY"}</div>
+      <div id="debug-gameid" style={{fontSize:'10px'}}>{generatedGameId || "EMPTY"}</div>
+      <div id="debug-loading" style={{fontSize:'10px'}}>{loading ? "TRUE" : "FALSE"}</div>
       {gameUrl && (
-        <div id="publish-controls" className="flex gap-2 mb-4 items-center animate-in fade-in slide-in-from-top-2">
+        <div id="publish-controls" style={{ display: 'flex' }} className="gap-2 mb-4 items-center border border-blue-500 p-2 bg-gray-900">
             <input 
                 id="game-title-input"
                 type="text"

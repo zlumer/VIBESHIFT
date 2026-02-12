@@ -7,6 +7,7 @@ export function WalletButton() {
 
   return (
     <button
+      id="wallet-button"
       onClick={publicKey ? disconnect : connect}
       className="bg-white text-black px-4 py-2 rounded-full font-bold hover:bg-gray-200 transition text-sm"
     >

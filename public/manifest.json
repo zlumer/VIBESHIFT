@@ -1,0 +1,16 @@
+{
+  "name": "VIBESHIFT",
+  "short_name": "VIBESHIFT",
+  "description": "Vibecoding for the Degenerative Age",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#a855f7",
+  "icons": [
+    {
+      "src": "/window.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

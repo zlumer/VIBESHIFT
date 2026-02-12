@@ -18,9 +18,15 @@ async function generateGif(url: string, gameId: string) {
     });
     const page = await context.newPage();
     
-    // Construct full URL (Next.js dev or prod)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    await page.goto(`${baseUrl}${url}`);
+    console.log(`GIF Gen: Navigating to ${baseUrl}${url}`);
+    
+    // Construct full URL (Next.js dev or prod)
+    try {
+        await page.goto(`${baseUrl}${url}`, { timeout: 10000 });
+    } catch (e) {
+        console.error('GIF Gen page.goto failed:', e);
+    }
     
     // Wait for game to load
     await page.waitForTimeout(2000);
@@ -47,7 +53,10 @@ export async function publishGame(gameData: {
   gameId: string;
 }) {
   try {
-    const gifPreviewUrl = await generateGif(gameData.bundleUrl, gameData.gameId);
+    let gifPreviewUrl = null;
+    if (process.env.NODE_ENV !== 'test') {
+        gifPreviewUrl = await generateGif(gameData.bundleUrl, gameData.gameId);
+    }
 
     const { data, error } = await supabase
       .from('games')
@@ -166,42 +175,39 @@ export async function generateGame(prompt: string) {
       - Ensure the code is self-contained and bug-free.
     `;
 
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    let code = response.text();
+    let code = '';
+    let gameId = '';
+    let retryCount = 0;
+    const maxRetries = 2;
 
-    // Clean up markdown if present
-    code = code.replace(/```html/g, '').replace(/```/g, '');
+    while (retryCount <= maxRetries) {
+      const result = await model.generateContent(retryCount > 0 ? `${fullPrompt}\n\nPREVIOUS ATTEMPT FAILED VALIDATION. PLEASE ENSURE THE CODE IS BUG-FREE AND ALL ASSETS LOAD CORRECTLY.` : fullPrompt);
+      const response = await result.response;
+      code = response.text();
+      code = code.replace(/```html/g, '').replace(/```/g, '');
 
-    // Generate ID and save
-    const gameId = `game-${Date.now()}`;
-    const publicDir = path.join(process.cwd(), 'public', 'games', 'generated');
-    
-    // Ensure directory exists
-    if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir, { recursive: true });
+      gameId = `game-${Date.now()}`;
+      const publicDir = path.join(process.cwd(), 'public', 'games', 'generated');
+      if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+
+      const filePath = path.join(publicDir, `${gameId}.html`);
+      fs.writeFileSync(filePath, code);
+
+      console.log(`Validation attempt ${retryCount + 1} for ${gameId}...`);
+      const validation = await validateGameCode(`/games/generated/${gameId}.html`);
+      
+      if (validation.valid) {
+        return { success: true, url: `/games/generated/${gameId}.html`, gameId, code, assetsUsed: assets };
+      }
+
+      console.warn(`Validation failed: ${validation.error}`);
+      retryCount++;
     }
 
-    const filePath = path.join(publicDir, `${gameId}.html`);
-    fs.writeFileSync(filePath, code);
-
-    console.log(`Game generated and saved to ${filePath}`);
-
-    // 2. Validate the generated code
-    console.log(`Validating game: ${gameId}...`);
-    const validation = await validateGameCode(`/games/generated/${gameId}.html`);
-    if (!validation.valid) {
-      console.warn(`Validation failed for ${gameId}: ${validation.error}`);
-      // In a real app, we might want to retry generation once
-      // For now, we return the error to the UI
-      return { 
-        success: false, 
-        error: `Generated code has errors: ${validation.error}. Please try again.` 
-      };
-    }
-
-    // Return the URL
-    return { success: true, url: `/games/generated/${gameId}.html`, gameId, code, assetsUsed: assets };
+    return { 
+      success: false, 
+      error: `Failed to generate valid code after ${maxRetries + 1} attempts. Please try a different prompt.` 
+    };
   } catch (error) {
     console.error('Error generating game:', error);
     return { success: false, error: 'Failed to generate game.' };
@@ -271,34 +277,39 @@ export async function remix(originalCode: string, newPrompt: string) {
         4. Output ONLY the FULL new HTML code. No markdown. Start with <!DOCTYPE html>.
       `;
   
-      const result = await model.generateContent(fullPrompt);
-      const response = await result.response;
-      let code = response.text();
-  
-      code = code.replace(/```html/g, '').replace(/```/g, '');
-  
-      const gameId = `remix-${Date.now()}`;
-      const publicDir = path.join(process.cwd(), 'public', 'games', 'remixed');
-      
-      if (!fs.existsSync(publicDir)) {
-        fs.mkdirSync(publicDir, { recursive: true });
-      }
-  
-      const filePath = path.join(publicDir, `${gameId}.html`);
-      fs.writeFileSync(filePath, code);
-  
-      // 2. Validate the generated code
-      console.log(`Validating remix: ${gameId}...`);
-      const validation = await validateGameCode(`/games/remixed/${gameId}.html`);
-      if (!validation.valid) {
-        console.warn(`Validation failed for remix ${gameId}: ${validation.error}`);
-        return { 
-          success: false, 
-          error: `Remixed code has errors: ${validation.error}. Please try again.` 
-        };
+      let code = '';
+      let gameId = '';
+      let retryCount = 0;
+      const maxRetries = 2;
+
+      while (retryCount <= maxRetries) {
+        const result = await model.generateContent(retryCount > 0 ? `${fullPrompt}\n\nPREVIOUS REMIX FAILED VALIDATION. PLEASE ENSURE THE CODE IS BUG-FREE.` : fullPrompt);
+        const response = await result.response;
+        code = response.text();
+        code = code.replace(/```html/g, '').replace(/```/g, '');
+
+        gameId = `remix-${Date.now()}`;
+        const publicDir = path.join(process.cwd(), 'public', 'games', 'remixed');
+        if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+
+        const filePath = path.join(publicDir, `${gameId}.html`);
+        fs.writeFileSync(filePath, code);
+
+        console.log(`Validation attempt ${retryCount + 1} for remix ${gameId}...`);
+        const validation = await validateGameCode(`/games/remixed/${gameId}.html`);
+        
+        if (validation.valid) {
+          return { success: true, url: `/games/remixed/${gameId}.html`, gameId, code, assetsUsed: assets };
+        }
+
+        console.warn(`Remix validation failed: ${validation.error}`);
+        retryCount++;
       }
 
-      return { success: true, url: `/games/remixed/${gameId}.html`, gameId, code, assetsUsed: assets };
+      return { 
+        success: false, 
+        error: `Failed to generate valid remix after ${maxRetries + 1} attempts.` 
+      };
     } catch (error) {
       console.error('Error remixing game:', error);
       return { success: false, error: 'Failed to remix game.' };

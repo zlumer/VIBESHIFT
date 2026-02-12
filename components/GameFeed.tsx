@@ -14,6 +14,11 @@ export default function GameFeed() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [lastScore, setLastScore] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadingGameId, setLoadingGameId] = useState<string | null>(null)
+  const countdownTimer = useRef<NodeJS.Timeout | null>(null)
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const [iframeLoaded, setIframeLoaded] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     async function fetchGames() {
@@ -25,6 +30,16 @@ export default function GameFeed() {
       
       if (data) {
         setGames(data)
+        // Pre-fetch the first 3 game bundles
+        data.slice(0, 3).forEach(game => {
+          if (game.s3_bundle_url) {
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = game.s3_bundle_url;
+            link.as = 'document';
+            document.head.appendChild(link);
+          }
+        });
       }
       setLoading(false)
     }
@@ -32,11 +47,74 @@ export default function GameFeed() {
   }, [])
 
   // Handle Focus (Start Playing)
-  const handleFocus = (gameId: number) => {
+  const handleFocus = (gameId: string) => {
+    if (countdownTimer.current) {
+        clearTimeout(countdownTimer.current);
+        countdownTimer.current = null;
+    }
+    setCountdown(null);
+    setLoadingGameId(null);
     setActiveGameId(gameId)
+    setIframeLoaded(false)
     setIsPlaying(true)
     setLastScore(null)
+
+    // Stop feed background audio when game starts
+    if (audioRef.current) {
+        audioRef.current.pause();
+    }
   }
+
+  // Handle Slide Change
+  const handleSlideChange = (swiper: any) => {
+    const game = games[swiper.activeIndex];
+    
+    // Clear previous
+    if (countdownTimer.current) {
+        clearTimeout(countdownTimer.current);
+    }
+    setCountdown(null);
+    setActiveGameId(null);
+    setIframeLoaded(false);
+    setIsPlaying(false);
+    setLoadingGameId(null);
+
+    // Audio management: Feed scroll should have a "background vibe" if possible
+    if (audioRef.current) {
+        audioRef.current.play().catch(() => {
+            console.log('Autoplay blocked, waiting for interaction');
+        });
+    }
+
+    if (game) {
+        setLoadingGameId(game.id);
+        setCountdown(5);
+
+        // Pre-fetch NEXT game
+        const nextGame = games[swiper.activeIndex + 1];
+        if (nextGame && nextGame.s3_bundle_url) {
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = nextGame.s3_bundle_url;
+            link.as = 'document';
+            document.head.appendChild(link);
+        }
+        
+        let timeLeft = 5;
+        const interval = setInterval(() => {
+            timeLeft -= 1;
+            setCountdown(timeLeft);
+            if (timeLeft <= 0) {
+                clearInterval(interval);
+                setActiveGameId(game.id);
+                setIframeLoaded(false);
+                setCountdown(null);
+            }
+        }, 1000);
+        
+        countdownTimer.current = interval;
+    }
+  };
 
   // Handle Exit (Stop Playing)
   const handleExit = (e: React.MouseEvent) => {
@@ -93,6 +171,12 @@ export default function GameFeed() {
 
   return (
     <div className="h-screen w-full bg-black text-white overflow-hidden relative font-sans">
+      <audio 
+        ref={audioRef}
+        src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
+        loop 
+        autoPlay 
+      />
       {/* Wallet Button */}
       {!isPlaying && (
         <div className="absolute top-4 right-4 z-50">
@@ -142,39 +226,47 @@ export default function GameFeed() {
           pagination={{ clickable: true }}
           modules={[Mousewheel, Pagination]}
           className="h-full w-full"
-          onSlideChange={() => {
-            setActiveGameId(null)
-            setIsPlaying(false)
-          }}
+          onSlideChange={handleSlideChange}
+          onInit={(swiper) => handleSlideChange(swiper)}
           allowTouchMove={!isPlaying}
           touchStartPreventDefault={false}
           noSwiping={isPlaying}
         >
           {games.map((game) => (
             <SwiperSlide key={game.id} className="relative flex items-center justify-center h-full w-full bg-black">
-              {activeGameId === game.id ? (
-                <iframe
-                  src={game.s3_bundle_url}
-                  className="w-full h-full border-none"
-                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                />
-              ) : (
-                <div 
-                  className="flex flex-col items-center justify-center w-full h-full cursor-pointer bg-cover bg-center group relative overflow-hidden"
-                  style={{ backgroundImage: `url(${game.gif_preview_url || 'https://placehold.co/600x400?text=Vibeshift'})` }}
-                  onClick={() => handleFocus(game.id)}
-                >
-                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500" />
-                  <div className="relative bg-black/60 p-8 rounded-2xl text-center backdrop-blur-md border border-white/10 group-hover:border-purple-500/50 transition-all transform group-hover:scale-105 duration-500 shadow-2xl">
-                    <h2 className="text-4xl font-black mb-3 tracking-tighter italic uppercase text-white drop-shadow-lg">{game.title}</h2>
-                    <div className="flex flex-col items-center">
-                        <div className="h-1 w-12 bg-purple-500 mb-4 rounded-full group-hover:w-24 transition-all duration-500" />
-                        <p className="text-xs text-purple-300 font-bold uppercase tracking-[0.3em] animate-pulse">Tap to Play</p>
-                    </div>
+              <div 
+                className="flex flex-col items-center justify-center w-full h-full cursor-pointer bg-cover bg-center group relative overflow-hidden"
+                style={{ backgroundImage: `url(${game.gif_preview_url || 'https://placehold.co/600x400?text=Vibeshift'})` }}
+                onClick={() => handleFocus(game.id)}
+              >
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500" />
+                
+                {countdown !== null && loadingGameId === game.id && (
+                  <div className="absolute top-1/4 left-1/2 -translate-x-1/2 bg-purple-600/80 px-6 py-2 rounded-full backdrop-blur-md border border-white/20 animate-bounce z-10">
+                      <p className="text-white font-black text-xl">Starting in {countdown}...</p>
+                  </div>
+                )}
+
+                <div className="relative bg-black/60 p-8 rounded-2xl text-center backdrop-blur-md border border-white/10 group-hover:border-purple-500/50 transition-all transform group-hover:scale-105 duration-500 shadow-2xl z-10">
+                  <h2 className="text-4xl font-black mb-3 tracking-tighter italic uppercase text-white drop-shadow-lg">{game.title}</h2>
+                  <div className="flex flex-col items-center">
+                      <div className="h-1 w-12 bg-purple-500 mb-4 rounded-full group-hover:w-24 transition-all duration-500" />
+                      <p className="text-xs text-purple-300 font-bold uppercase tracking-[0.3em] animate-pulse">Tap to Play</p>
                   </div>
                 </div>
-              )}
+
+                {activeGameId === game.id && (
+                  <div className={`absolute inset-0 z-20 transition-opacity duration-1000 ${iframeLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                    <iframe
+                      src={game.s3_bundle_url}
+                      className="w-full h-full border-none"
+                      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      onLoad={() => setIframeLoaded(true)}
+                    />
+                  </div>
+                )}
+              </div>
             </SwiperSlide>
           ))}
         </Swiper>

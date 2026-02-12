@@ -12,7 +12,11 @@ export const test = base.extend<{ page: Page }>({
         connect: async () => {
           console.log('[MockWallet] connect() called');
           mockSolana.isConnected = true;
-          mockSolana.publicKey = { toBase58: () => 'MockWalletPublicKey111111111111111111111111' };
+          const pkStr = 'MockWalletPublicKey111111111111111111111111';
+          mockSolana.publicKey = { 
+            toBase58: () => pkStr,
+            toString: () => pkStr 
+          };
           return Promise.resolve({ publicKey: mockSolana.publicKey });
         },
         disconnect: async () => {

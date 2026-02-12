@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, Connection, clusterApiUrl } from '@solana/web3.js';
 
-const PLATFORM_WALLET = new PublicKey('PLATFORM_WALLET_ADDRESS_HERE');
+const PLATFORM_WALLET = new PublicKey('11111111111111111111111111111111');
 const SOLANA_RPC = clusterApiUrl('devnet');
 
 export async function processPaymentAndSplit(params: {
