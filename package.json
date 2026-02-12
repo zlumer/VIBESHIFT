@@ -9,11 +9,16 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@solana/web3.js": "^1.98.4",
     "@supabase/supabase-js": "^2.95.3",
+    "dotenv": "^17.2.4",
     "kaplay": "^3001.0.19",
     "next": "16.1.6",
+    "pg": "^8.18.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "server-only": "^0.0.1",
     "swiper": "^12.1.0"
   },
   "devDependencies": {

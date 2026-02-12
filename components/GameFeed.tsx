@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useRef, useState, useEffect } from 'react'
@@ -17,11 +16,13 @@ const DEMO_GAMES = [
 export default function GameFeed() {
   const [activeGameId, setActiveGameId] = useState<number | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  
+  const [lastScore, setLastScore] = useState<number | null>(null)
+
   // Handle Focus (Start Playing)
   const handleFocus = (gameId: number) => {
     setActiveGameId(gameId)
     setIsPlaying(true)
+    setLastScore(null)
   }
 
   // Handle Exit (Stop Playing)
@@ -31,16 +32,50 @@ export default function GameFeed() {
     setIsPlaying(false)
   }
 
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Validate origin if needed, but for now allow same-origin or localhost
+      
+      const { type, amount, score } = event.data;
+
+      if (type === 'GAME_INIT') {
+        console.log('Game initialized via SDK');
+      } else if (type === 'GAME_PAYMENT') {
+        console.log(`Payment triggered: ${amount} SOL`);
+        // Mock Wallet Signature
+        alert(`Requesting signature for ${amount} SOL... (Mock Success)`);
+        console.log('Payment Success: Signature 0xMOCKSIG123');
+        // Notify game back? Maybe postMessage back 'PAYMENT_SUCCESS'
+        // event.source.postMessage({ type: 'PAYMENT_SUCCESS' }, event.origin);
+      } else if (type === 'GAME_OVER') {
+        console.log(`Game Over. Score: ${score}`);
+        setLastScore(score);
+        // Maybe exit game?
+        // setIsPlaying(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   return (
-    <div className="h-screen w-full bg-black text-white overflow-hidden">
+    <div className="h-screen w-full bg-black text-white overflow-hidden relative">
       {/* If playing, show EXIT button overlay */}
       {isPlaying && (
-        <button 
-          onClick={handleExit}
-          className="absolute top-4 left-4 z-50 bg-red-600 px-4 py-2 rounded-full font-bold shadow-lg"
-        >
-          EXIT GAME
-        </button>
+        <div className="absolute top-4 left-4 z-50 flex gap-4">
+          <button 
+            onClick={handleExit}
+            className="bg-red-600 px-4 py-2 rounded-full font-bold shadow-lg hover:bg-red-700 transition"
+          >
+            EXIT GAME
+          </button>
+          {lastScore !== null && (
+             <div className="bg-yellow-500 text-black px-4 py-2 rounded-full font-bold">
+               Last Score: {lastScore}
+             </div>
+          )}
+        </div>
       )}
 
       <Swiper
@@ -67,7 +102,7 @@ export default function GameFeed() {
                 src={game.bundle}
                 className="w-full h-full border-none"
                 // Important Sandbox permissions
-                sandbox="allow-scripts allow-same-origin allow-popups"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               />
             ) : (
@@ -77,7 +112,7 @@ export default function GameFeed() {
                 style={{ backgroundImage: `url(${game.preview})` }} // Placeholder BG
                 onClick={() => handleFocus(game.id)}
               >
-                <div className="bg-black/50 p-6 rounded-xl text-center backdrop-blur-sm">
+                <div className="bg-black/50 p-6 rounded-xl text-center backdrop-blur-sm hover:bg-black/60 transition">
                   <h2 className="text-3xl font-bold mb-2">{game.title}</h2>
                   <p className="text-sm text-gray-300">Tap to Play</p>
                 </div>

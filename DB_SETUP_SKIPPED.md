@@ -1,0 +1,1 @@
+Database schema setup skipped due to network restrictions (IPv6 unreachable). Please execute 'supabase/schema.sql' manually in the Supabase SQL Editor.
