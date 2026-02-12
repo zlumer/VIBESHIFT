@@ -10,6 +10,18 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.G
 
 export async function generateGame(prompt: string) {
   try {
+    if (process.env.MOCK_AI === 'true') {
+      const gameId = `game-${Date.now()}`;
+      const publicDir = path.join(process.cwd(), 'public', 'games', 'generated');
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+      }
+      const mockCode = `<!DOCTYPE html><html><body><h1>Mock Game Generated</h1><script>console.log("Mock Game Loaded")</script></body></html>`;
+      const filePath = path.join(publicDir, `${gameId}.html`);
+      fs.writeFileSync(filePath, mockCode);
+      return { success: true, url: `/games/generated/${gameId}.html`, gameId, code: mockCode };
+    }
+
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const fullPrompt = `
@@ -59,6 +71,18 @@ export async function generateGame(prompt: string) {
 
 export async function remix(originalCode: string, newPrompt: string) {
     try {
+      if (process.env.MOCK_AI === 'true') {
+        const gameId = `remix-${Date.now()}`;
+        const publicDir = path.join(process.cwd(), 'public', 'games', 'remixed');
+        if (!fs.existsSync(publicDir)) {
+          fs.mkdirSync(publicDir, { recursive: true });
+        }
+        const mockCode = `<!DOCTYPE html><html><body><h1>Mock Game Remixed</h1><script>console.log("Mock Remix Loaded")</script></body></html>`;
+        const filePath = path.join(publicDir, `${gameId}.html`);
+        fs.writeFileSync(filePath, mockCode);
+        return { success: true, url: `/games/remixed/${gameId}.html`, gameId, code: mockCode };
+      }
+
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
   
       const fullPrompt = `

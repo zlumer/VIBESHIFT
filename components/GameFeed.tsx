@@ -8,9 +8,9 @@ import 'swiper/css/pagination'
 
 // Mock Data (will come from Supabase)
 const DEMO_GAMES = [
-  { id: 1, title: 'Flappy Clone', preview: '/preview1.gif', bundle: '/games/flappy/index.html' },
-  { id: 2, title: 'Space Dodging', preview: '/preview2.gif', bundle: '/games/space/index.html' },
-  { id: 3, title: 'Pixel Runner', preview: '/preview3.gif', bundle: '/games/runner/index.html' },
+  { id: 1, title: 'Flappy Clone', preview: 'https://placehold.co/600x400?text=Flappy', bundle: '/games/flappy/index.html' },
+  { id: 2, title: 'Space Dodging', preview: 'https://placehold.co/600x400?text=Space', bundle: '/games/space/index.html' },
+  { id: 3, title: 'Pixel Runner', preview: 'https://placehold.co/600x400?text=Runner', bundle: '/games/runner/index.html' },
 ]
 
 export default function GameFeed() {
