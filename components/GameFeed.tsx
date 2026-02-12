@@ -70,6 +70,18 @@ export default function GameFeed() {
           >
             EXIT GAME
           </button>
+          
+          <button 
+            onClick={(e) => {
+                e.stopPropagation();
+                // Redirect to create page with remixId
+                window.location.href = `/create?remixId=${activeGameId}`;
+            }}
+            className="bg-purple-600 px-4 py-2 rounded-full font-bold shadow-lg hover:bg-purple-700 transition flex items-center gap-2"
+          >
+            <span>⚡ REMIX</span>
+          </button>
+
           {lastScore !== null && (
              <div className="bg-yellow-500 text-black px-4 py-2 rounded-full font-bold">
                Last Score: {lastScore}

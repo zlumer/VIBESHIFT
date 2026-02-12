@@ -50,9 +50,53 @@ export async function generateGame(prompt: string) {
     console.log(`Game generated and saved to ${filePath}`);
 
     // Return the URL
-    return { success: true, url: `/games/generated/${gameId}.html`, gameId };
+    return { success: true, url: `/games/generated/${gameId}.html`, gameId, code };
   } catch (error) {
     console.error('Error generating game:', error);
     return { success: false, error: 'Failed to generate game.' };
   }
 }
+
+export async function remix(originalCode: string, newPrompt: string) {
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  
+      const fullPrompt = `
+        You are an expert game developer. 
+        I have an existing HTML game using Kaplay.js. 
+        I want you to MODIFY it based on these instructions: "${newPrompt}".
+  
+        Here is the ORIGINAL CODE:
+        \`\`\`html
+        ${originalCode}
+        \`\`\`
+  
+        Requirements for the REMIX:
+        1. Keep the core logic working if not asked to change it.
+        2. Ensure Kaplay.js and GameSDK are still included and initialized correctly.
+        3. Output ONLY the FULL, VALID HTML code for the new version.
+        4. No markdown ticks. Start with <!DOCTYPE html>.
+      `;
+  
+      const result = await model.generateContent(fullPrompt);
+      const response = await result.response;
+      let code = response.text();
+  
+      code = code.replace(/```html/g, '').replace(/```/g, '');
+  
+      const gameId = `remix-${Date.now()}`;
+      const publicDir = path.join(process.cwd(), 'public', 'games', 'remixed');
+      
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+      }
+  
+      const filePath = path.join(publicDir, `${gameId}.html`);
+      fs.writeFileSync(filePath, code);
+  
+      return { success: true, url: `/games/remixed/${gameId}.html`, gameId, code };
+    } catch (error) {
+      console.error('Error remixing game:', error);
+      return { success: false, error: 'Failed to remix game.' };
+    }
+  }
