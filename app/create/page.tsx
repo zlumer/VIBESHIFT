@@ -89,25 +89,33 @@ function CreateContent() {
       const { solana } = window as any;
       if (!solana) throw new Error('Wallet not found');
 
-      const connection = new Connection('https://api.devnet.solana.com');
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: new PublicKey('VibeShiftTreasury111111111111111111111111'), // Placeholder Treasury
-          lamports: feeInSol * LAMPORTS_PER_SOL,
-        })
-      );
+      // BYPASS payment in test mode if needed
+      const skipPayment = process.env.NEXT_PUBLIC_SKIP_PAYMENT === 'true' || 
+                         (typeof window !== 'undefined' && localStorage.getItem('NEXT_PUBLIC_SKIP_PAYMENT') === 'true');
 
-      const { blockhash } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = publicKey;
+      if (skipPayment) {
+          console.log('Skipping payment check for dev/test');
+      } else {
+        const connection = new Connection('https://api.devnet.solana.com');
+        const transaction = new Transaction().add(
+            SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: new PublicKey('VibeShiftTreasury111111111111111111111111'), // Placeholder Treasury
+            lamports: feeInSol * LAMPORTS_PER_SOL,
+            })
+        );
 
-      alert(`Please sign the $1.00 (0.005 SOL) publishing fee transaction.`);
-      const signed = await solana.signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signed.serialize());
-      await connection.confirmTransaction(signature);
-      
-      console.log('Publish fee paid:', signature);
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = publicKey;
+
+        alert(`Please sign the $1.00 (0.005 SOL) publishing fee transaction.`);
+        const signed = await solana.signTransaction(transaction);
+        const signature = await connection.sendRawTransaction(signed.serialize());
+        await connection.confirmTransaction(signature);
+        
+        console.log('Publish fee paid:', signature);
+      }
 
       const result = await publishGame({
         title: title || 'Untitled Vibe',
@@ -162,8 +170,9 @@ function CreateContent() {
       </div>
 
       {gameUrl && (
-        <div className="flex gap-2 mb-4 items-center animate-in fade-in slide-in-from-top-2">
+        <div id="publish-controls" className="flex gap-2 mb-4 items-center animate-in fade-in slide-in-from-top-2">
             <input 
+                id="game-title-input"
                 type="text"
                 placeholder="Game Title"
                 value={title}
@@ -171,13 +180,14 @@ function CreateContent() {
                 className="bg-gray-800 border border-gray-700 rounded p-2 text-white text-sm"
             />
             <button 
+                id="publish-button"
                 onClick={handlePublish}
                 disabled={publishing || !publicKey}
                 className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded font-bold text-sm disabled:opacity-50"
             >
                 {publishing ? 'Publishing...' : 'Publish ($1)'}
             </button>
-            {!publicKey && <p className="text-xs text-yellow-500">Connect wallet to publish</p>}
+            {!publicKey && <p id="no-wallet-msg" className="text-xs text-yellow-500">Connect wallet to publish</p>}
         </div>
       )}
 

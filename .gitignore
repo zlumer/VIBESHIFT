@@ -51,4 +51,4 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 playwright.config.ts
-tests/
+# tests/ # Uncommmented to allow committing tests

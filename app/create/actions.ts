@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { supabase } from '@/lib/supabase';
 import { chromium } from 'playwright';
+import { validateGameCode } from './validator';
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '');
@@ -100,6 +101,7 @@ export async function generateGame(prompt: string) {
     <h1 style="color: #a855f7;">Mock Game Generated</h1>
     <p>Prompt: ${prompt}</p>
     <p>Assets found: ${assets?.length || 0}</p>
+    <canvas id="mockCanvas" width="360" height="640"></canvas>
     <button id="payBtn" style="background: #a855f7; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Pay 0.1 SOL</button>
     <button id="dieBtn" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">Die (Game Over)</script>
     <script>
@@ -127,7 +129,7 @@ export async function generateGame(prompt: string) {
       return { success: true, url: `/games/generated/${gameId}.html`, gameId, code: mockCode, assetsUsed: assets };
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const fullPrompt = `
       Create a fun, hypercasual portrait web game using Kaplay.js (the successor to Kaboom.js).
@@ -147,6 +149,16 @@ export async function generateGame(prompt: string) {
       7. Assets: Use k.loadSprite("name", "URL") from the provided list. If no relevant assets, use k.add([k.rect(40, 40), k.color(255, 0, 0)]) for placeholders.
       8. UI: Show the score on screen using k.add([k.text("Score: 0"), ...]).
       9. Visuals: Make it colorful and "vibrant". Use a dark background.
+
+      SDK USAGE EXAMPLES:
+      - window.GameSDK.init(); // On start
+      - window.GameSDK.game_over(score); // On death
+      - window.GameSDK.payment_trigger(amount); // To ask for payment (use sparingly)
+
+      KAPLAY.JS TIPS:
+      - Use k.onUpdate() for per-frame logic.
+      - Use k.onKeyPress() or k.onClick() for controls.
+      - The width and height are 360x640.
 
       OUTPUT FORMAT:
       - Return ONLY the raw HTML starting with <!DOCTYPE html>.
@@ -174,6 +186,19 @@ export async function generateGame(prompt: string) {
     fs.writeFileSync(filePath, code);
 
     console.log(`Game generated and saved to ${filePath}`);
+
+    // 2. Validate the generated code
+    console.log(`Validating game: ${gameId}...`);
+    const validation = await validateGameCode(`/games/generated/${gameId}.html`);
+    if (!validation.valid) {
+      console.warn(`Validation failed for ${gameId}: ${validation.error}`);
+      // In a real app, we might want to retry generation once
+      // For now, we return the error to the UI
+      return { 
+        success: false, 
+        error: `Generated code has errors: ${validation.error}. Please try again.` 
+      };
+    }
 
     // Return the URL
     return { success: true, url: `/games/generated/${gameId}.html`, gameId, code, assetsUsed: assets };
@@ -212,6 +237,7 @@ export async function remix(originalCode: string, newPrompt: string) {
 <body style="background: black; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif;">
     <h1 style="color: #a855f7;">Mock Game Remixed</h1>
     <p>Remix Prompt: ${newPrompt}</p>
+    <canvas id="mockCanvas" width="360" height="640"></canvas>
     <script>
         console.log("Mock Remix Loaded");
         window.GameSDK.init();
@@ -223,7 +249,7 @@ export async function remix(originalCode: string, newPrompt: string) {
         return { success: true, url: `/games/remixed/${gameId}.html`, gameId, code: mockCode, assetsUsed: assets };
       }
 
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
   
       const fullPrompt = `
         You are an expert Kaplay.js developer. 
@@ -261,6 +287,17 @@ export async function remix(originalCode: string, newPrompt: string) {
       const filePath = path.join(publicDir, `${gameId}.html`);
       fs.writeFileSync(filePath, code);
   
+      // 2. Validate the generated code
+      console.log(`Validating remix: ${gameId}...`);
+      const validation = await validateGameCode(`/games/remixed/${gameId}.html`);
+      if (!validation.valid) {
+        console.warn(`Validation failed for remix ${gameId}: ${validation.error}`);
+        return { 
+          success: false, 
+          error: `Remixed code has errors: ${validation.error}. Please try again.` 
+        };
+      }
+
       return { success: true, url: `/games/remixed/${gameId}.html`, gameId, code, assetsUsed: assets };
     } catch (error) {
       console.error('Error remixing game:', error);
