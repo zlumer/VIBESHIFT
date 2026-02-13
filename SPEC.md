@@ -7,6 +7,7 @@ A vertical-scroll mobile PWA where users play AI-generated hypercasual games (bu
 
 ### 2.1 The Feed (Viewer)
 * **Layout:** Full-screen vertical video feed (100vh).
+* **Accessibility:** The app is fully accessible without wallet connection. Users can browse the feed and play games for free. Wallet connection is only required for payments (spends/purchases) and creator features.
 * **State 1 (Scroll):** User scrolls through 5-second GIFs of gameplay. Audio is **ON** (unless system muted).
 * **State 2 (Auto-Load):** If scroll stops for >5s, the GIF crossfades into the actual HTML5 game iframe.
 * *Constraint:* Input is **blocked** to prevent "Scroll Traps."
