@@ -253,7 +253,7 @@ export default function GameFeed() {
 
   return (
     <div className="h-screen w-full bg-black text-white overflow-hidden relative font-sans">
-      {console.log('GameFeed: Rendering main container, loading status:', loading, 'games count:', games.length)}
+      {(() => { console.log('GameFeed: Rendering main container, loading status:', loading, 'games count:', games.length); return null; })()}
       <audio 
         ref={audioRef}
         src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
@@ -263,7 +263,7 @@ export default function GameFeed() {
       {/* Wallet Button */}
       {!isPlaying && (
         <div className="absolute top-4 right-4 z-50 flex flex-col items-end gap-2">
-          {console.log('GameFeed: Rendering Wallet/Session controls')}
+          {(() => { console.log('GameFeed: Rendering Wallet/Session controls'); return null; })()}
           <WalletButton />
           <SessionKeyManager />
         </div>
@@ -272,7 +272,7 @@ export default function GameFeed() {
       {/* If playing, show EXIT button overlay */}
       {isPlaying && (
         <div className="absolute top-4 left-4 z-[100] flex flex-wrap gap-2 md:gap-4 items-center">
-          {console.log('GameFeed: Rendering Play HUD for game:', activeGameId)}
+          {(() => { console.log('GameFeed: Rendering Play HUD for game:', activeGameId); return null; })()}
           <button 
             id="exit-game-btn"
             onClick={handleExit}
@@ -302,7 +302,7 @@ export default function GameFeed() {
 
       {loading ? (
         <div className="h-full w-full flex flex-col items-center justify-center space-y-4">
-          {console.log('GameFeed: Rendering Loading Spinner')}
+          {(() => { console.log('GameFeed: Rendering Loading Spinner'); return null; })()}
           <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-purple-400 font-medium animate-pulse uppercase tracking-widest text-xs">Vibing the feed...</p>
         </div>
@@ -324,7 +324,7 @@ export default function GameFeed() {
           touchStartPreventDefault={false}
           noSwiping={isPlaying}
         >
-          {console.log('GameFeed: Mapping games to slides. Count:', games.length)}
+          {(() => { console.log('GameFeed: Mapping games to slides. Count:', games.length); return null; })()}
           {games.map((game) => (
             <SwiperSlide key={game.id} className="relative flex items-center justify-center h-full w-full bg-black">
               <div 
@@ -341,12 +341,12 @@ export default function GameFeed() {
                   handleFocus(game.id);
                 }}
               >
-                {console.log('GameFeed: Rendering Slide content for:', game.title, 'ID:', game.id)}
+                {(() => { console.log('GameFeed: Rendering Slide content for:', game.title, 'ID:', game.id); return null; })()}
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500" />
                 
                 {countdown !== null && loadingGameId === game.id && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-30 backdrop-blur-sm transition-all duration-500">
-                      {console.log('GameFeed: Rendering countdown:', countdown)}
+                      {(() => { console.log('GameFeed: Rendering countdown:', countdown); return null; })()}
                       <div className="relative">
                         <svg className="w-32 h-32 md:w-48 h-48 transform -rotate-90">
                           <circle
@@ -400,7 +400,7 @@ export default function GameFeed() {
 
                 {activeGameId === game.id && (
                   <div className={`absolute inset-0 z-20 transition-opacity duration-1000 ${iframeLoaded ? 'opacity-100' : 'opacity-0'}`}>
-                    {console.log('GameFeed: Rendering Iframe for active game')}
+                    {(() => { console.log('GameFeed: Rendering Iframe for active game'); return null; })()}
                     <iframe
                       src={game.s3_bundle_url}
                       className="w-full h-full border-none"
