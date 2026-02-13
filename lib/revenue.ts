@@ -66,10 +66,10 @@ export async function processPaymentAndSplit(params: {
         const { data: assetData } = await supabase
             .from('assets')
             .select('creator_wallet')
-            .in('id', assets.map(a => a.asset_id));
+            .in('id', assets.map((a: { asset_id: string }) => a.asset_id));
         
         if (assetData) {
-            assetWallets = assetData.map(a => a.creator_wallet);
+            assetWallets = assetData.map((a: { creator_wallet: string }) => a.creator_wallet);
         }
     }
 

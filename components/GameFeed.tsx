@@ -48,7 +48,7 @@ export default function GameFeed() {
       if (data && data.length > 0) {
         setGames(data)
         // Pre-fetch the first 3 game bundles
-        data.slice(0, 3).forEach(game => {
+        data.slice(0, 3).forEach((game: any) => {
           if (game.s3_bundle_url) {
             const link = document.createElement('link');
             link.rel = 'prefetch';

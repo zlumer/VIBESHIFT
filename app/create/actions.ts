@@ -94,7 +94,7 @@ export async function generateGame(prompt: string) {
     }
 
     const assetContext = filteredAssets.length > 0 
-      ? `Available Assets (ONLY USE THESE URLs if relevant to the request):\n${filteredAssets.map(a => `- URL: ${a.s3_url}, Tags: ${a.tags.join(', ')}`).join('\n')}`
+      ? `Available Assets (ONLY USE THESE URLs if relevant to the request):\n${filteredAssets.map((a: { s3_url: string; tags: string[] }) => `- URL: ${a.s3_url}, Tags: ${a.tags.join(', ')}`).join('\n')}`
       : "No specific assets found in database.";
 
     if (process.env.MOCK_AI === 'true') {
@@ -228,7 +228,7 @@ export async function remix(originalCode: string, newPrompt: string) {
         .or(keywords.map(k => `tags.cs.{${k}}`).join(','));
 
       const assetContext = assets && assets.length > 0 
-        ? `Available NEW Assets (Use these if they match the remix request):\n${assets.map(a => `- URL: ${a.s3_url}, Tags: ${a.tags.join(', ')}`).join('\n')}`
+        ? `Available NEW Assets (Use these if they match the remix request):\n${assets.map((a: { s3_url: string; tags: string[] }) => `- URL: ${a.s3_url}, Tags: ${a.tags.join(', ')}`).join('\n')}`
         : "";
 
       if (process.env.MOCK_AI === 'true') {
