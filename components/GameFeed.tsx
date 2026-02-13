@@ -30,10 +30,10 @@ export default function GameFeed() {
       if ((window as any).MOCK_DATA) {
         console.log('Setting mock games');
         setGames([{
-            id: 'test-game-1',
-            title: 'Test Game 1',
-            gif_preview_url: 'https://placehold.co/600x400?text=Game1',
-            s3_bundle_url: 'data:text/html,<html><body><h1>Test Game 1</h1><script>window.parent.postMessage({type:\"GAME_INIT\"}, \"*\");</script></body></html>',
+            id: 'vibe-dodge',
+            title: 'Vibe Dodge',
+            gif_preview_url: 'https://placehold.co/360x640/purple/white.png?text=Vibe+Dodge+Gameplay',
+            s3_bundle_url: '/games/generated/vibe-dodge.html',
             status: 'published'
         }]);
         setLoading(false);
