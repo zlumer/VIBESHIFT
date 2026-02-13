@@ -12,7 +12,13 @@ import { SessionKeyManager } from './SessionKeyManager'
 import { sessionKeyService } from '@/lib/session-keys'
 
 export default function GameFeed() {
-  const [games, setGames] = useState<any[]>([])
+  const [games, setGames] = useState<any[]>([{
+    id: 'vibe-dodge-static',
+    title: 'Vibe Dodge',
+    gif_preview_url: 'https://placehold.co/360x640/purple/white.png?text=Vibe+Dodge+Gameplay',
+    s3_bundle_url: '/games/generated/vibe-dodge.html',
+    status: 'published'
+  }])
   const [activeGameId, setActiveGameId] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [lastScore, setLastScore] = useState<number | null>(null)
