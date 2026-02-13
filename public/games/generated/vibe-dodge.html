@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vibe Dodge</title>
+    <script src="https://unpkg.com/kaplay@3000.1.17/dist/kaplay.js"></script>
+    <script src="/game-sdk.js"></script>
+</head>
+<body style="margin: 0; background: black; overflow: hidden;">
+<script>
+    const k = kaplay({
+        width: 360,
+        height: 640,
+        letterbox: true,
+        global: false,
+        background: [0, 0, 0],
+    });
+
+    window.GameSDK.init();
+
+    k.loadSprite("bird", "https://cdn.pixabay.com/photo/2016/03/31/18/36/bird-1294458_1280.png");
+    k.loadSprite("rock", "https://cdn.pixabay.com/photo/2012/04/13/21/02/rock-33633_1280.png");
+
+    k.scene("main", () => {
+        let score = 0;
+        const scoreLabel = k.add([
+            k.text("Score: 0", { size: 24 }),
+            k.pos(20, 20),
+            k.z(100),
+        ]);
+
+        const player = k.add([
+            k.sprite("bird"),
+            k.pos(k.center().x, 550),
+            k.anchor("center"),
+            k.area(),
+            k.scale(0.05),
+            "player",
+        ]);
+
+        k.onUpdate(() => {
+            if (k.isMouseDown()) {
+                const mpos = k.mousePos();
+                player.pos.x = k.lerp(player.pos.x, mpos.x, 0.2);
+            }
+        });
+
+        k.onUpdate("rock", (r) => {
+            r.move(0, r.speed);
+            if (r.pos.y > 700) {
+                k.destroy(r);
+                score++;
+                scoreLabel.text = "Score: " + score;
+            }
+        });
+
+        k.loop(1, () => {
+            k.add([
+                k.sprite("rock"),
+                k.pos(k.rand(20, 340), -50),
+                k.anchor("center"),
+                k.area(),
+                k.scale(0.05),
+                "rock",
+                { speed: k.rand(200, 400) },
+            ]);
+        });
+
+        player.onCollide("rock", () => {
+            k.shake();
+            window.GameSDK.game_over(score);
+            k.go("main");
+        });
+    });
+
+    k.go("main");
+</script>
+</body>
+</html>
