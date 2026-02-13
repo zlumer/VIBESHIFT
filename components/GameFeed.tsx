@@ -12,6 +12,7 @@ import { SessionKeyManager } from './SessionKeyManager'
 import { sessionKeyService } from '@/lib/session-keys'
 
 export default function GameFeed() {
+  console.log('GameFeed: Rendering component');
   const [games, setGames] = useState<any[]>([{
     id: 'vibe-dodge-static',
     title: 'Vibe Dodge',
@@ -19,6 +20,7 @@ export default function GameFeed() {
     s3_bundle_url: '/games/generated/vibe-dodge.html',
     status: 'published'
   }])
+  console.log('GameFeed: Initial games state:', games);
   const [activeGameId, setActiveGameId] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [lastScore, setLastScore] = useState<number | null>(null)
@@ -31,7 +33,7 @@ export default function GameFeed() {
 
   useEffect(() => {
     async function fetchGames() {
-      console.log('fetchGames triggered.');
+      console.log('GameFeed: fetchGames effect triggered');
       setLoading(true);
 
       // Fallback games if DB is empty or during initial load stabilization
@@ -44,17 +46,25 @@ export default function GameFeed() {
       }];
 
       try {
+          console.log('GameFeed: Fetching from Supabase...');
           const { data, error } = await supabase
             .from('games')
             .select('*')
             .eq('status', 'published')
             .order('created_at', { ascending: false });
           
+          if (error) {
+            console.error('GameFeed: Supabase query error:', error);
+            throw error;
+          }
+
           if (data && data.length > 0) {
+            console.log('GameFeed: Data received from Supabase:', data.length, 'games');
             setGames(data);
             // Pre-fetch the first 3 game bundles
             data.slice(0, 3).forEach((game: any) => {
               if (game.s3_bundle_url) {
+                console.log('GameFeed: Prefetching bundle:', game.s3_bundle_url);
                 const link = document.createElement('link');
                 link.rel = 'prefetch';
                 link.href = game.s3_bundle_url;
@@ -63,13 +73,14 @@ export default function GameFeed() {
               }
             });
           } else {
-            console.log('No games in DB, using fallback');
+            console.log('GameFeed: No games in DB, using fallback');
             setGames(fallbackGames);
           }
       } catch (err) {
-          console.error('Fetch error, using fallback:', err);
+          console.error('GameFeed: Catch block error during fetch:', err);
           setGames(fallbackGames);
       }
+      console.log('GameFeed: Setting loading to false');
       setLoading(false);
     }
     fetchGames()
@@ -242,6 +253,7 @@ export default function GameFeed() {
 
   return (
     <div className="h-screen w-full bg-black text-white overflow-hidden relative font-sans">
+      {console.log('GameFeed: Rendering main container, loading status:', loading, 'games count:', games.length)}
       <audio 
         ref={audioRef}
         src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
@@ -251,6 +263,7 @@ export default function GameFeed() {
       {/* Wallet Button */}
       {!isPlaying && (
         <div className="absolute top-4 right-4 z-50 flex flex-col items-end gap-2">
+          {console.log('GameFeed: Rendering Wallet/Session controls')}
           <WalletButton />
           <SessionKeyManager />
         </div>
@@ -259,6 +272,7 @@ export default function GameFeed() {
       {/* If playing, show EXIT button overlay */}
       {isPlaying && (
         <div className="absolute top-4 left-4 z-[100] flex flex-wrap gap-2 md:gap-4 items-center">
+          {console.log('GameFeed: Rendering Play HUD for game:', activeGameId)}
           <button 
             id="exit-game-btn"
             onClick={handleExit}
@@ -288,6 +302,7 @@ export default function GameFeed() {
 
       {loading ? (
         <div className="h-full w-full flex flex-col items-center justify-center space-y-4">
+          {console.log('GameFeed: Rendering Loading Spinner')}
           <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-purple-400 font-medium animate-pulse uppercase tracking-widest text-xs">Vibing the feed...</p>
         </div>
@@ -301,11 +316,15 @@ export default function GameFeed() {
           modules={[Mousewheel, Pagination]}
           className="h-full w-full"
           onSlideChange={handleSlideChange}
-          onInit={(swiper) => handleSlideChange(swiper)}
+          onInit={(swiper) => {
+            console.log('GameFeed: Swiper initialized');
+            handleSlideChange(swiper);
+          }}
           allowTouchMove={!isPlaying}
           touchStartPreventDefault={false}
           noSwiping={isPlaying}
         >
+          {console.log('GameFeed: Mapping games to slides. Count:', games.length)}
           {games.map((game) => (
             <SwiperSlide key={game.id} className="relative flex items-center justify-center h-full w-full bg-black">
               <div 
@@ -317,14 +336,17 @@ export default function GameFeed() {
                   e.stopPropagation();
                 }}
                 onClick={(e) => {
+                  console.log('GameFeed: Slide clicked for game:', game.id);
                   if (activeGameId === game.id) return;
                   handleFocus(game.id);
                 }}
               >
+                {console.log('GameFeed: Rendering Slide content for:', game.title, 'ID:', game.id)}
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500" />
                 
                 {countdown !== null && loadingGameId === game.id && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-30 backdrop-blur-sm transition-all duration-500">
+                      {console.log('GameFeed: Rendering countdown:', countdown)}
                       <div className="relative">
                         <svg className="w-32 h-32 md:w-48 h-48 transform -rotate-90">
                           <circle
@@ -378,12 +400,16 @@ export default function GameFeed() {
 
                 {activeGameId === game.id && (
                   <div className={`absolute inset-0 z-20 transition-opacity duration-1000 ${iframeLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                    {console.log('GameFeed: Rendering Iframe for active game')}
                     <iframe
                       src={game.s3_bundle_url}
                       className="w-full h-full border-none"
                       sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      onLoad={() => setIframeLoaded(true)}
+                      onLoad={() => {
+                        console.log('GameFeed: Iframe loaded event');
+                        setIframeLoaded(true);
+                      }}
                     />
                   </div>
                 )}
