@@ -444,9 +444,11 @@ export default function GameFeed() {
                 <div className="absolute left-4 bottom-8 z-30 max-w-[70%]">
                   <h3 className="font-bold text-lg mb-1 drop-shadow-lg">@{game.creator_wallet?.slice(0,6) || 'vibemaster'}</h3>
                   <p className="text-sm line-clamp-2 drop-shadow-md">{game.description || 'Playing some fire AI-generated vibes. 🔥 #vibeshift #solana #web3gaming'}</p>
-                  <div className="mt-3 flex items-center gap-2 bg-black/20 backdrop-blur-sm rounded-full px-3 py-1 w-fit border border-white/10">
+                  <div className="mt-3 flex items-center gap-2 bg-black/20 backdrop-blur-sm rounded-full px-3 py-1 w-fit border border-white/10 overflow-hidden">
                     <span className="text-xs animate-bounce">🎵</span>
-                    <marquee className="text-xs font-medium w-32">Original Sound - {game.title}</marquee>
+                    <div className="text-xs font-medium w-32 whitespace-nowrap animate-[marquee_5s_linear_infinite]">
+                      Original Sound - {game.title} &nbsp;&nbsp;&nbsp;&nbsp; Original Sound - {game.title}
+                    </div>
                   </div>
                 </div>
 
