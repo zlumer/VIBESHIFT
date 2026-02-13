@@ -8,6 +8,9 @@ test.describe('Vibeshift Tests', () => {
       
       const mockPkBase58 = '2u3VfD9N2nQG6xS6V7p3uN3G6xS6V7p3uN3G6xS6V7p3';
 
+      (window as any).MOCK_DATA = true;
+      localStorage.setItem('NEXT_PUBLIC_SKIP_PAYMENT', 'true');
+
       // Define PublicKey mock if it doesn't exist to prevent Solana SDK from crashing
       if (!(window as any).PublicKey) {
           (window as any).PublicKey = function(key: string) {
@@ -19,9 +22,6 @@ test.describe('Vibeshift Tests', () => {
           (window as any).PublicKey.findProgramAddressSync = () => [new (window as any).PublicKey('11111111111111111111111111111111'), 255];
           (window as any).PublicKey.isOnCurve = () => true;
       }
-
-      (window as any).MOCK_DATA = true;
-      localStorage.setItem('NEXT_PUBLIC_SKIP_PAYMENT', 'true');
       
       // Basic mock of solana/phantom before any library loads
       const mockSolana: any = {
@@ -180,13 +180,27 @@ test.describe('Vibeshift Tests', () => {
     });
 
     // Mock the publish RPC
+    await page.route('**/api/publish', async (route, request) => {
+        console.log('MOCK API: publish request', request.method(), request.url());
+        if (request.method() === 'POST') {
+            await route.fulfill({
+              status: 200,
+              contentType: 'application/json',
+              body: JSON.stringify({ success: true, game: { id: 'new-id' } })
+            });
+        } else {
+            route.continue();
+        }
+    });
+
+    // Mock the Supabase insert for publishGame action
     await page.route('**/rest/v1/games', async (route, request) => {
         console.log('MOCK SUPABASE: games request', request.method(), request.url());
         if (request.method() === 'POST') {
             await route.fulfill({
               status: 201,
               contentType: 'application/json',
-              body: JSON.stringify({ id: 'new-id' })
+              body: JSON.stringify([{ id: 'new-id' }])
             });
         } else {
             route.continue();
@@ -235,12 +249,13 @@ test.describe('Vibeshift Tests', () => {
         (window as any).alert = (msg: string) => { console.log('STUBBED ALERT:', msg); };
     });
 
+    // Mock the Supabase insert for publishGame action
     await page.route('**/rest/v1/games', async (route, request) => {
         if (request.method() === 'POST') {
             await route.fulfill({
               status: 201,
               contentType: 'application/json',
-              body: JSON.stringify({ id: 'remixed-id' })
+              body: JSON.stringify([{ id: 'remixed-id' }])
             });
         } else {
             route.continue();
