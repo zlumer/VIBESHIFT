@@ -25,40 +25,46 @@ export default function GameFeed() {
 
   useEffect(() => {
     async function fetchGames() {
-      console.log('fetchGames triggered. MOCK_DATA:', (window as any).MOCK_DATA);
+      console.log('fetchGames triggered.');
       setLoading(true);
-      if ((window as any).MOCK_DATA) {
-        console.log('Setting mock games');
-        setGames([{
-            id: 'vibe-dodge',
-            title: 'Vibe Dodge',
-            gif_preview_url: 'https://placehold.co/360x640/purple/white.png?text=Vibe+Dodge+Gameplay',
-            s3_bundle_url: '/games/generated/vibe-dodge.html',
-            status: 'published'
-        }]);
-        setLoading(false);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('games')
-        .select('*')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-      
-      if (data && data.length > 0) {
-        setGames(data)
-        // Pre-fetch the first 3 game bundles
-        data.slice(0, 3).forEach((game: any) => {
-          if (game.s3_bundle_url) {
-            const link = document.createElement('link');
-            link.rel = 'prefetch';
-            link.href = game.s3_bundle_url;
-            link.as = 'document';
-            document.head.appendChild(link);
+
+      // Fallback games if DB is empty or during initial load stabilization
+      const fallbackGames = [{
+          id: 'vibe-dodge',
+          title: 'Vibe Dodge',
+          gif_preview_url: 'https://placehold.co/360x640/purple/white.png?text=Vibe+Dodge+Gameplay',
+          s3_bundle_url: '/games/generated/vibe-dodge.html',
+          status: 'published'
+      }];
+
+      try {
+          const { data, error } = await supabase
+            .from('games')
+            .select('*')
+            .eq('status', 'published')
+            .order('created_at', { ascending: false });
+          
+          if (data && data.length > 0) {
+            setGames(data);
+            // Pre-fetch the first 3 game bundles
+            data.slice(0, 3).forEach((game: any) => {
+              if (game.s3_bundle_url) {
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = game.s3_bundle_url;
+                link.as = 'document';
+                document.head.appendChild(link);
+              }
+            });
+          } else {
+            console.log('No games in DB, using fallback');
+            setGames(fallbackGames);
           }
-        });
+      } catch (err) {
+          console.error('Fetch error, using fallback:', err);
+          setGames(fallbackGames);
       }
-      setLoading(false)
+      setLoading(false);
     }
     fetchGames()
   }, [])
