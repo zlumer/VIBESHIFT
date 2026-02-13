@@ -269,4 +269,46 @@ test.describe('Vibeshift Tests', () => {
     
     await page.waitForURL(url => url.pathname === '/' || url.toString().endsWith('/'), { timeout: 60000 });
   });
+
+  test('Scenario 5: Game Over & Score Display', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+    
+    // Wait for feed to load
+    await expect(page.locator('h2:has-text("Test Game 1")')).toBeVisible({ timeout: 30000 });
+    
+    // Start game
+    await page.locator('h2:has-text("Test Game 1")').click({ force: true });
+    await expect(page.locator('iframe').first()).toBeVisible({ timeout: 30000 });
+
+    // Simulate GAME_OVER from SDK
+    const testScore = 1337;
+    await page.evaluate((score) => {
+      window.postMessage({ type: 'GAME_OVER', score: score }, '*');
+    }, testScore);
+
+    // Verify score display appears with correct value
+    const scoreDisplay = page.locator('#game-score-display');
+    await expect(scoreDisplay).toBeVisible();
+    await expect(scoreDisplay).toContainText(`SCORE: ${testScore}`);
+  });
+
+  test('Scenario 6: Remix URL verification', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+    
+    // Start game
+    await page.locator('h2:has-text("Test Game 1")').click({ force: true });
+    await expect(page.locator('iframe').first()).toBeVisible({ timeout: 30000 });
+
+    // Click REMIX button
+    const remixBtn = page.locator('#remix-game-btn');
+    await expect(remixBtn).toBeVisible();
+    
+    // Intercept navigation or check URL after click
+    await remixBtn.click();
+    
+    // Should navigate to /create with remixId param
+    await expect(page).toHaveURL(/.*\/create\?remixId=test-game-1/);
+  });
 });

@@ -198,9 +198,19 @@ export default function GameFeed() {
               console.log('Split payment processed:', result);
               
               if (event.source) {
-                (event.source as Window).postMessage({ type: 'PAYMENT_SUCCESS' }, { targetOrigin: '*' });
+                (event.source as Window).postMessage({ 
+                    type: 'PAYMENT_RESULT', 
+                    success: true 
+                }, { targetOrigin: '*' });
               }
             } else {
+               if (event.source) {
+                 (event.source as Window).postMessage({ 
+                     type: 'PAYMENT_RESULT', 
+                     success: false, 
+                     error: 'Insufficient funds or session expired' 
+                 }, { targetOrigin: '*' });
+               }
                alert('Payment failed. Please check your session key or wallet.');
             }
         } catch (err) {
@@ -289,6 +299,11 @@ export default function GameFeed() {
               <div 
                 className="flex flex-col items-center justify-center w-full h-full cursor-pointer bg-cover bg-center group relative overflow-hidden"
                 style={{ backgroundImage: `url(${game.gif_preview_url || 'https://placehold.co/600x400?text=Vibeshift'})` }}
+                onPointerDown={(e) => {
+                  if (activeGameId === game.id) return;
+                  // Stop propagation to prevent Swiper from handling this as a drag start
+                  e.stopPropagation();
+                }}
                 onClick={(e) => {
                   if (activeGameId === game.id) return;
                   handleFocus(game.id);
@@ -323,14 +338,21 @@ export default function GameFeed() {
                           />
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-4xl md:text-6xl font-black text-white drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]">
+                          <span className="text-5xl md:text-7xl font-black text-white drop-shadow-[0_0_15px_rgba(168,85,247,0.9)] animate-[ping_1s_infinite]">
                             {countdown}
                           </span>
                         </div>
                       </div>
-                      <p className="mt-8 text-purple-300 font-black uppercase tracking-[0.4em] text-sm md:text-base animate-pulse">
-                        Ready to shift?
-                      </p>
+                      <div className="text-center mt-8">
+                        <p className="text-purple-300 font-black uppercase tracking-[0.4em] text-sm md:text-base animate-pulse">
+                          Ready to shift?
+                        </p>
+                        <div className="mt-2 flex gap-1 justify-center">
+                            {[...Array(5)].map((_, i) => (
+                                <div key={i} className={`h-1 w-4 rounded-full ${5 - i <= countdown! ? 'bg-purple-500' : 'bg-white/20'}`} />
+                            ))}
+                        </div>
+                      </div>
                   </div>
                 )}
 
