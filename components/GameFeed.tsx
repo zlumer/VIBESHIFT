@@ -398,6 +398,58 @@ export default function GameFeed() {
                   </div>
                 </div>
 
+                {/* TikTok-style Social Sidebar */}
+                <div className="absolute right-4 bottom-24 z-30 flex flex-col items-center gap-6">
+                  <div className="flex flex-col items-center gap-1 group/icon cursor-pointer">
+                    <div className="w-12 h-12 bg-gray-800 rounded-full border-2 border-white flex items-center justify-center overflow-hidden shadow-lg group-hover/icon:scale-110 transition-transform">
+                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${game.creator_wallet || 'anon'}`} alt="creator" />
+                    </div>
+                    <div className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center -mt-3 z-10 text-[10px] font-bold">+</div>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-1 cursor-pointer group/icon">
+                    <div className="w-12 h-12 flex items-center justify-center group-hover/icon:scale-125 transition-transform text-white drop-shadow-md">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-9 h-9 text-red-500">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-bold shadow-black drop-shadow-lg">{(game.play_count || 0) * 42 + 124}</span>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-1 cursor-pointer group/icon">
+                    <div className="w-12 h-12 flex items-center justify-center group-hover/icon:scale-125 transition-transform text-white drop-shadow-md">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-9 h-9">
+                        <path fillRule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.327.196 2.348 1.358 2.348 2.696v7.416c0 1.338-1.021 2.5-2.348 2.696a48.735 48.735 0 01-1.161.14l-3.324 3.324a.75.75 0 01-1.28-.53v-2.262c-1.133-.075-2.247-.212-3.343-.41-1.327-.196-2.348-1.358-2.348-2.696V5.467c0-1.338 1.021-2.5 2.348-2.696z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-bold shadow-black drop-shadow-lg">{(game.play_count || 0) + 12}</span>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-1 cursor-pointer group/icon">
+                    <div className="w-12 h-12 flex items-center justify-center group-hover/icon:scale-125 transition-transform text-white drop-shadow-md">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-9 h-9">
+                        <path d="M9.97 4.903a.75.75 0 011.06 0l5 5a.75.75 0 010 1.06l-5 5a.75.75 0 11-1.06-1.06l3.72-3.72H4a.75.75 0 010-1.5h9.69l-3.72-3.72a.75.75 0 010-1.06z" />
+                        <path d="M12.47 14.903a.75.75 0 011.06 0l5 5a.75.75 0 010 1.06l-5 5a.75.75 0 11-1.06-1.06l3.72-3.72H4a.75.75 0 010-1.5h9.69l-3.72-3.72a.75.75 0 010-1.06z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-bold shadow-black drop-shadow-lg">Share</span>
+                  </div>
+
+                  <div className="w-12 h-12 bg-black rounded-full border-2 border-gray-600 p-2 animate-[spin_3s_linear_infinite]">
+                    <div className="w-full h-full bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full" />
+                  </div>
+                </div>
+
+                {/* Game Info Overlay (Bottom Left) */}
+                <div className="absolute left-4 bottom-8 z-30 max-w-[70%]">
+                  <h3 className="font-bold text-lg mb-1 drop-shadow-lg">@{game.creator_wallet?.slice(0,6) || 'vibemaster'}</h3>
+                  <p className="text-sm line-clamp-2 drop-shadow-md">{game.description || 'Playing some fire AI-generated vibes. 🔥 #vibeshift #solana #web3gaming'}</p>
+                  <div className="mt-3 flex items-center gap-2 bg-black/20 backdrop-blur-sm rounded-full px-3 py-1 w-fit border border-white/10">
+                    <span className="text-xs animate-bounce">🎵</span>
+                    <marquee className="text-xs font-medium w-32">Original Sound - {game.title}</marquee>
+                  </div>
+                </div>
+
                 {activeGameId === game.id && (
                   <div className={`absolute inset-0 z-20 transition-opacity duration-1000 ${iframeLoaded ? 'opacity-100' : 'opacity-0'}`}>
                     {(() => { console.log('GameFeed: Rendering Iframe for active game'); return null; })()}
