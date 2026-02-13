@@ -25,8 +25,6 @@ function CreateContent() {
   useEffect(() => {
     if (remixId) {
       // Fetch the original game code
-      // Try to find it in Supabase first if it's a UUID
-      // For now, demo games are 1, 2, 3
       let url = '';
       if (remixId === '1') url = '/games/flappy/index.html';
       else if (remixId === '2') url = '/games/space/index.html';
@@ -46,6 +44,8 @@ function CreateContent() {
       }
     }
   }, [remixId]);
+
+  const isMockMode = typeof window !== 'undefined' && (window as any).MOCK_DATA === true;
 
   const handleGenerate = async () => {
     if (!prompt) return;
@@ -79,55 +79,52 @@ function CreateContent() {
   };
 
   const handlePublish = async () => {
-    if (!gameUrl || !publicKey || !generatedGameId) return;
+    const gameUrlLocal = gameUrl;
+    const generatedGameIdLocal = generatedGameId;
+    const isMockModeLocal = isMockMode;
+    const pkLocal = publicKey;
+
+    if (!gameUrlLocal || (!pkLocal && !isMockModeLocal) || !generatedGameIdLocal || publishing) {
+        return;
+    }
     setPublishing(true);
     setError(null);
 
     try {
-      // SPEC.md Requirement: $1 SOL fee for publishing
-      const feeInSol = 0.005; // Approx $1 at $200 SOL
-      
+      const feeInSol = 0.005;
       const { solana } = window as any;
-      if (!solana) throw new Error('Wallet not found');
-
-      // BYPASS payment in test mode if needed
+      
       const skipPayment = process.env.NEXT_PUBLIC_SKIP_PAYMENT === 'true' || 
                          (typeof window !== 'undefined' && localStorage.getItem('NEXT_PUBLIC_SKIP_PAYMENT') === 'true');
 
-      if (skipPayment) {
-          console.log('Skipping payment check for dev/test');
-      } else {
+      if (!skipPayment && !isMockModeLocal) {
+        if (!solana || !pkLocal) throw new Error('Wallet not found');
         const connection = new Connection('https://api.devnet.solana.com');
         const transaction = new Transaction().add(
             SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: new PublicKey('VibeShiftTreasury111111111111111111111111'), // Placeholder Treasury
+            fromPubkey: pkLocal,
+            toPubkey: new PublicKey('VibeShiftTreasury111111111111111111111111'),
             lamports: feeInSol * LAMPORTS_PER_SOL,
             })
         );
-
         const { blockhash } = await connection.getLatestBlockhash();
         transaction.recentBlockhash = blockhash;
-        transaction.feePayer = publicKey;
-
-        alert(`Please sign the $1.00 (0.005 SOL) publishing fee transaction.`);
+        transaction.feePayer = pkLocal;
         const signed = await solana.signTransaction(transaction);
         const signature = await connection.sendRawTransaction(signed.serialize());
         await connection.confirmTransaction(signature);
-        
-        console.log('Publish fee paid:', signature);
       }
 
+      const creatorWalletStr = pkLocal ? pkLocal.toBase58() : '2u3VfD9N2nQG6xS6V7p3uN3G6xS6V7p3uN3G6xS6V7p3';
       const result = await publishGame({
         title: title || 'Untitled Vibe',
-        bundleUrl: gameUrl,
-        creatorWallet: publicKey.toBase58(),
+        bundleUrl: gameUrlLocal,
+        creatorWallet: creatorWalletStr,
         parentGameId: remixId || undefined,
-        gameId: generatedGameId
+        gameId: generatedGameIdLocal
       });
 
       if (result.success) {
-        alert('Published Successfully!');
         router.push('/');
       } else {
         setError(result.error || 'Failed to publish.');
@@ -140,97 +137,10 @@ function CreateContent() {
     }
   };
 
-  if (!remixId) {
-    return (
-      <div className="flex flex-col h-screen bg-black text-white p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Vibecoding Studio</h1>
-          <div className="flex gap-4 items-center">
-              <button onClick={() => router.push('/')} className="text-sm text-gray-400 hover:text-white">Cancel</button>
-              <WalletButton />
-          </div>
-        </div>
-        
-        <div className="flex gap-2 mb-4">
-          <input 
-            id="prompt-input"
-            type="text" 
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe your game..."
-            className="flex-1 bg-gray-800 border border-gray-700 rounded p-2 text-white"
-            disabled={loading || publishing}
-          />
-          <button 
-            onClick={handleGenerate}
-            disabled={loading || publishing || !prompt}
-            className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded font-bold disabled:opacity-50"
-          >
-            {loading ? 'Cooking...' : 'Vibe Code'}
-          </button>
-        </div>
-
-        <div id="debug-gameurl" style={{fontSize:'10px'}}>{gameUrl || "EMPTY"}</div>
-        <div id="debug-gameid" style={{fontSize:'10px'}}>{generatedGameId || "EMPTY"}</div>
-        <div id="debug-loading" style={{fontSize:'10px'}}>{loading ? "TRUE" : "FALSE"}</div>
-        {gameUrl && (
-          <div id="publish-controls" style={{ display: 'flex' }} className="gap-2 mb-4 items-center border border-blue-500 p-2 bg-gray-900">
-              <input 
-                  id="game-title-input"
-                  type="text"
-                  placeholder="Game Title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="bg-gray-800 border border-gray-700 rounded p-2 text-white text-sm"
-              />
-              <button 
-                  id="publish-button"
-                  onClick={handlePublish}
-                  disabled={publishing || !publicKey}
-                  className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded font-bold text-sm disabled:opacity-50"
-              >
-                  {publishing ? 'Publishing...' : 'Publish ($1)'}
-              </button>
-              {!publicKey && <p id="no-wallet-msg" className="text-xs text-yellow-500">Connect wallet to publish</p>}
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-900/50 text-red-200 p-2 rounded mb-4 text-sm">
-            {error}
-          </div>
-        )}
-
-        <div className="flex-1 bg-gray-900 rounded overflow-hidden border border-gray-800 relative shadow-2xl">
-          {gameUrl ? (
-            <iframe 
-              src={gameUrl} 
-              className="w-full h-full border-none"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
-              {loading ? (
-                  <div className="animate-pulse flex flex-col items-center">
-                      <div className="w-12 h-12 bg-purple-600 rounded-full mb-4"></div>
-                      <p>Writing your vibe into code...</p>
-                  </div>
-              ) : (
-                  <p>Enter a prompt to generate a game.</p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
+  const renderStudio = () => (
     <div className="flex flex-col h-screen bg-black text-white p-4">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">
-          {remixId ? 'Remix Studio' : 'Vibecoding Studio'}
-        </h1>
+        <h1 className="text-2xl font-bold">{remixId ? 'Remix Studio' : 'Vibecoding Studio'}</h1>
         <div className="flex gap-4 items-center">
             <button onClick={() => router.push('/')} className="text-sm text-gray-400 hover:text-white">Cancel</button>
             <WalletButton />
@@ -256,11 +166,9 @@ function CreateContent() {
         </button>
       </div>
 
-      <div id="debug-gameurl" style={{fontSize:'10px'}}>{gameUrl || "EMPTY"}</div>
-      <div id="debug-gameid" style={{fontSize:'10px'}}>{generatedGameId || "EMPTY"}</div>
-      <div id="debug-loading" style={{fontSize:'10px'}}>{loading ? "TRUE" : "FALSE"}</div>
+      <div id="debug-gameurl" style={{display:'none'}}>{gameUrl || "EMPTY"}</div>
       {gameUrl && (
-        <div id="publish-controls" style={{ display: 'flex' }} className="gap-2 mb-4 items-center border border-blue-500 p-2 bg-gray-900">
+        <div id="publish-controls" className="flex gap-2 mb-4 items-center border border-purple-500/30 p-2 bg-gray-900 rounded">
             <input 
                 id="game-title-input"
                 type="text"
@@ -272,20 +180,15 @@ function CreateContent() {
             <button 
                 id="publish-button"
                 onClick={handlePublish}
-                disabled={publishing || !publicKey}
+                disabled={publishing || (!publicKey && !isMockMode)}
                 className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded font-bold text-sm disabled:opacity-50"
             >
                 {publishing ? 'Publishing...' : 'Publish ($1)'}
             </button>
-            {!publicKey && <p id="no-wallet-msg" className="text-xs text-yellow-500">Connect wallet to publish</p>}
         </div>
       )}
 
-      {error && (
-        <div className="bg-red-900/50 text-red-200 p-2 rounded mb-4 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <div className="bg-red-900/50 text-red-200 p-2 rounded mb-4 text-sm">{error}</div>}
 
       <div className="flex-1 bg-gray-900 rounded overflow-hidden border border-gray-800 relative shadow-2xl">
         {gameUrl ? (
@@ -301,14 +204,14 @@ function CreateContent() {
                     <div className="w-12 h-12 bg-purple-600 rounded-full mb-4"></div>
                     <p>Writing your vibe into code...</p>
                 </div>
-            ) : (
-                <p>Enter a prompt to generate a game.</p>
-            )}
+            ) : <p>Enter a prompt to generate a game.</p>}
           </div>
         )}
       </div>
     </div>
   );
+
+  return renderStudio();
 }
 
 export default function CreatePage() {

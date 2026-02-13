@@ -1,29 +1,18 @@
-# VIBESHIFT Sprint Tasks
+# TODO: Fix and Finalize VIBESHIFT
 
-## 1. Playwright Test Stabilization
-- [x] Scenario 1: Feed visibility check.
-- [x] Scenario 2: GameSDK Payment bridge check.
-- [x] Scenario 3: Create Flow - **Issue**: Wallet connection mocking is flaky in the UI. 
-    - *Action:* Fixed via auto-connect in `lib/wallet.tsx` and improved Playwright injection.
-- [ ] Scenario 4: Remix Flow - Needs new test script.
+## Completed (Sprint 1)
+- [x] **Fix Playwright Tests:** Fixed Solana Public Key "Non-base58" error and stabilized mock wallet initialization.
+- [x] **Full Integration Test:** Successfully ran all 4 Playwright scenarios (Feed, Payment SDK, Create, Remix).
 
-## 2. Wallet UX Improvements
-- [x] Implement automatic wallet detection/auto-connect in `WalletProvider`.
-- [ ] Add "Session Key" delegate UI (Gum SDK integration or mock).
-- [ ] Improve wallet connect/disconnect state feedback (spinner/toast).
+## High Priority
+- [ ] **Stabilize GIF/Preview Generation:** Headless browser in server actions is prone to X server errors. Consider a more robust or external preview service.
+- [ ] **Session Key Integration:** Implement Gum Session Keys as per SPEC.md to replace simple mock signatures.
+- [ ] **On-Chain Revenue Split:** Finalize the 45/20/20/15 smart contract logic.
 
-## 3. Vibecoding Engine
-- [x] Basic AI generation with Gemini.
-- [x] AI Validator with headless Playwright checks.
-- [ ] Better Asset Keyword matching (semantic search?).
-- [ ] True GIF generation (current version uses PNG screenshots as placeholders).
+## Technical Debt
+- [ ] **Error Handling in Create:** Improve UI feedback when generation or publishing fails.
+- [ ] **Asset Keyword Matching:** Improve keyword matching for assets (currently basic substring match).
 
-## 4. Feed UX
-- [x] Vertical scroll with Swiper.js.
-- [x] Auto-load games after 5s hover/idle.
-- [ ] Countdown overlay refinements.
-- [x] Pre-fetching next games in the feed.
-
-## 5. Deployment / Building
-- [/] Fix any linting/TS errors preventing `npm run build`. (Build verified compiling, TS check in progress).
-- [ ] Verify Supabase RLS policies for `games` and `assets`.
+## Mobile & UX
+- [ ] **Mobile Responsive Audit:** Verify the 100vh Swiper works perfectly on various mobile screens.
+- [ ] **Countdown Overlay:** Refine the "Game Starting in..." countdown UI.

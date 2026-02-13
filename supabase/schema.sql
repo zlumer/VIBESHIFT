@@ -38,13 +38,27 @@ create table game_assets_usage (
   primary key (game_id, asset_id)
 );
 
+-- 5. Session Keys for 1-click spends
+create table session_keys (
+  id uuid default gen_random_uuid() primary key,
+  user_wallet text references users(wallet_address),
+  session_public_key text unique not null,
+  limit_lamports bigint not null,
+  remaining_lamports bigint not null,
+  expires_at timestamptz not null,
+  is_active boolean default true,
+  created_at timestamptz default now()
+);
+
 -- Enable Row Level Security (RLS)
 alter table users enable row level security;
 alter table assets enable row level security;
 alter table games enable row level security;
 alter table game_assets_usage enable row level security;
+alter table session_keys enable row level security;
 
 -- Public Access Policy (for hackathon speed)
 create policy "Public users are viewable by everyone" on users for select using (true);
 create policy "Public assets are viewable by everyone" on assets for select using (true);
 create policy "Public games are viewable by everyone" on games for select using (true);
+create policy "Public session_keys are viewable by everyone" on session_keys for select using (true);

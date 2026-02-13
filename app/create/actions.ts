@@ -12,9 +12,12 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.G
 
 async function generateGif(url: string, gameId: string) {
   try {
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     const context = await browser.newContext({
-      viewport: { width: 600, height: 400 }
+      viewport: { width: 360, height: 640 }, // Match portrait game res
+      deviceScaleFactor: 2,
     });
     const page = await context.newPage();
     
@@ -23,20 +26,30 @@ async function generateGif(url: string, gameId: string) {
     
     // Construct full URL (Next.js dev or prod)
     try {
-        await page.goto(`${baseUrl}${url}`, { timeout: 10000 });
+        await page.goto(`${baseUrl}${url}`, { 
+            waitUntil: 'networkidle',
+            timeout: 20000 
+        });
     } catch (e) {
         console.error('GIF Gen page.goto failed:', e);
     }
     
-    // Wait for game to load
-    await page.waitForTimeout(2000);
+    // Wait for Kaplay to initialize and potentially show some action
+    await page.waitForTimeout(3000);
 
-    const gifPath = path.join(process.cwd(), 'public', 'previews', `${gameId}.png`); // Using png as placeholder for gif
+    const gifPath = path.join(process.cwd(), 'public', 'previews', `${gameId}.png`);
     const previewDir = path.join(process.cwd(), 'public', 'previews');
     if (!fs.existsSync(previewDir)) fs.mkdirSync(previewDir, { recursive: true });
 
-    await page.screenshot({ path: gifPath });
+    // Capture screenshot
+    await page.screenshot({ 
+        path: gifPath, 
+        type: 'png',
+        omitBackground: true 
+    });
+    
     await browser.close();
+    console.log(`GIF Gen: Saved preview to ${gifPath}`);
 
     return `/previews/${gameId}.png`;
   } catch (err) {
@@ -54,7 +67,10 @@ export async function publishGame(gameData: {
 }) {
   try {
     let gifPreviewUrl = null;
-    if (process.env.NODE_ENV !== 'test') {
+    
+    // Check if we should skip GIF generation (test or mock mode)
+    const isMock = process.env.MOCK_AI === 'true' || process.env.NEXT_PUBLIC_SKIP_PAYMENT === 'true';
+    if (process.env.NODE_ENV !== 'test' && !isMock) {
         gifPreviewUrl = await generateGif(gameData.bundleUrl, gameData.gameId);
     }
 
@@ -71,7 +87,10 @@ export async function publishGame(gameData: {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+        console.error('Supabase insert error:', error);
+        throw error;
+    }
 
     return { success: true, game: data };
   } catch (error: any) {

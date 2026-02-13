@@ -3,7 +3,8 @@ import { chromium } from 'playwright';
 export async function validateGameCode(gameUrl: string): Promise<{ valid: boolean; error?: string }> {
   let browser;
   try {
-    if (process.env.NODE_ENV === 'test' || process.env.NEXT_PUBLIC_SKIP_PAYMENT === 'true') {
+    const isMock = process.env.MOCK_AI === 'true' || process.env.NEXT_PUBLIC_SKIP_PAYMENT === 'true';
+    if (process.env.NODE_ENV === 'test' || isMock) {
       console.log('Skipping validator for test/mock mode');
       return { valid: true };
     }
