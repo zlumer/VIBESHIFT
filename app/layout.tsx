@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "@/lib/wallet";
+import { runMigrations } from "@/lib/migrations";
+
+// Trigger migrations/health check on server start (side effect)
+if (typeof window === 'undefined') {
+  runMigrations().catch(console.error);
+}
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
