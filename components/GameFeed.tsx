@@ -28,7 +28,7 @@ export default function GameFeed() {
         .eq('status', 'published')
         .order('created_at', { ascending: false })
       
-      if (data) {
+      if (data && data.length > 0) {
         setGames(data)
         // Pre-fetch the first 3 game bundles
         data.slice(0, 3).forEach(game => {

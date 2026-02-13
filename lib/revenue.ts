@@ -32,22 +32,39 @@ export async function processPaymentAndSplit(params: {
 
     if (game.parent_game_id) {
         remixShare = params.amount * 0.20;
-    } else {
-        // If no parent, 20% remix share goes back to creator
-        // Total Creator: 45 + 20 = 65%
     }
 
-    // Adjusting for the 'otherwise adds to Creator' rule in SPEC.md
-    const actualCreatorShare = game.parent_game_id ? creatorShare : (creatorShare + params.amount * 0.20);
+    // 2. Fetch Assets for this game
+    const { data: assets, error: assetsError } = await supabase
+      .from('game_assets_usage')
+      .select('asset_id')
+      .eq('game_id', params.gameId);
+
+    // If no assets, asset share adds to Creator (not clearly specified in SPEC, but usually Creator gets the rest)
+    // However, SPEC says "otherwise adds to Creator" only for remix author.
+    // Let's assume Asset Pool is always 20%, but if no assets, it might go to Platform or Creator.
+    // Given the Remix rule, let's keep it consistent: if no assets, Creator gets it.
+    
+    if (!assets || assets.length === 0) {
+        // No assets, creator gets the asset share
+    } else {
+        // Asset share stays as is (20%)
+    }
+
+    const actualCreatorShare = (game.parent_game_id ? creatorShare : (creatorShare + remixShare)) + 
+                               ((!assets || assets.length === 0) ? assetShare : 0);
+    
+    const actualRemixShare = game.parent_game_id ? remixShare : 0;
+    const actualAssetShare = (!assets || assets.length === 0) ? 0 : assetShare;
 
     console.log(`Split for ${params.amount} SOL:`);
     console.log(`- Creator (${game.creator_wallet}): ${actualCreatorShare} SOL`);
-    if (game.parent_game_id) console.log(`- Remix Parent (${game.parent_game_id}): ${remixShare} SOL`);
-    console.log(`- Asset Pool: ${assetShare} SOL`);
+    if (game.parent_game_id) console.log(`- Remix Parent (${game.parent_game_id}): ${actualRemixShare} SOL`);
+    if (actualAssetShare > 0) console.log(`- Asset Pool (${assets?.length} assets): ${actualAssetShare} SOL`);
     console.log(`- Platform: ${platformShare} SOL`);
 
     // Verification sum should equal amount
-    const total = actualCreatorShare + remixShare + assetShare + platformShare;
+    const total = actualCreatorShare + actualRemixShare + actualAssetShare + platformShare;
     console.log(`- Total Distributed: ${total} SOL`);
 
     const { error: revError } = await supabase
@@ -57,12 +74,15 @@ export async function processPaymentAndSplit(params: {
 
     if (revError) throw revError;
 
+    // TODO: Actually send the SOL via Solana Web3.js / Session Keys
+    // For now, it's a successful mock of the logic.
+
     return { 
         success: true, 
         split: { 
             creator: actualCreatorShare, 
-            remix: remixShare, 
-            assets: assetShare, 
+            remix: actualRemixShare, 
+            assets: actualAssetShare, 
             platform: platformShare 
         } 
     };

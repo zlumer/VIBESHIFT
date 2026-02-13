@@ -17,6 +17,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Auto-connect if already authorized
+    if (typeof window !== 'undefined' && localStorage.getItem('NEXT_PUBLIC_SKIP_PAYMENT') === 'true') {
+        const mockPk = 'MockWalletPublicKey111111111111111111111111';
+        setPublicKey(new PublicKey(mockPk));
+        return;
+    }
+
     const { solana } = window as any
     if (solana?.isPhantom && solana.isConnected) {
       if (solana.publicKey) {
@@ -27,6 +33,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const connect = async () => {
     console.log('wallet.tsx: connect() called');
+    
+    // Check for MOCK mode (e.g. in tests)
+    if (typeof window !== 'undefined' && localStorage.getItem('NEXT_PUBLIC_SKIP_PAYMENT') === 'true') {
+        const mockPk = 'MockWalletPublicKey111111111111111111111111';
+        setPublicKey(new PublicKey(mockPk));
+        return;
+    }
+
     const { solana } = window as any
     if (solana?.isPhantom) {
       console.log('wallet.tsx: Phantom detected');

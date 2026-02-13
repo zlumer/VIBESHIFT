@@ -1,0 +1,34 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mock Game</title>
+    <script src="/game-sdk.js"></script>
+</head>
+<body style="background: black; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif;">
+    <h1 style="color: #a855f7;">Mock Game Generated</h1>
+    <p>Prompt: A new test game</p>
+    <p>Assets found: 0</p>
+    <canvas id="mockCanvas" width="360" height="640"></canvas>
+    <button id="payBtn" style="background: #a855f7; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Pay 0.1 SOL</button>
+    <button id="dieBtn" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">Die (Game Over)</script>
+    <script>
+        console.log("Mock Game Loaded");
+        window.GameSDK.init();
+        
+        document.getElementById('payBtn').onclick = () => {
+            window.GameSDK.payment_trigger(0.1);
+        };
+        
+        document.getElementById('dieBtn').onclick = () => {
+            window.GameSDK.game_over(Math.floor(Math.random() * 1000));
+        };
+
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'PAYMENT_SUCCESS') {
+                alert('Game received PAYMENT_SUCCESS!');
+            }
+        });
+    </script>
+</body>
+</html>
