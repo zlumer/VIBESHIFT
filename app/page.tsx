@@ -10,8 +10,10 @@ const GameFeed = dynamic(() => import('@/components/GameFeed'), {
 
 export default function Home() {
   return (
-    <main className="flex h-screen w-full flex-col bg-black overflow-hidden">
-      <GameFeed />
+    <main className="flex h-screen w-full flex-col bg-neutral-900 overflow-hidden items-center justify-center">
+      <div className="h-full w-full max-w-[500px] aspect-[9/16] bg-black relative shadow-2xl overflow-hidden">
+        <GameFeed />
+      </div>
     </main>
   )
 }

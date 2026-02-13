@@ -271,14 +271,14 @@ export default function GameFeed() {
 
       {/* If playing, show EXIT button overlay */}
       {isPlaying && (
-        <div className="absolute top-4 left-4 z-[100] flex flex-wrap gap-2 md:gap-4 items-center">
+        <div className="absolute top-6 left-6 z-[9999] flex flex-wrap gap-2 md:gap-4 items-center">
           {(() => { console.log('GameFeed: Rendering Play HUD for game:', activeGameId); return null; })()}
           <button 
             id="exit-game-btn"
             onClick={handleExit}
-            className="bg-red-600 px-4 py-2 rounded-full font-bold shadow-lg hover:bg-red-700 transition text-xs md:text-sm uppercase tracking-wider active:scale-95"
+            className="bg-black/80 backdrop-blur-md border border-white/20 text-white px-5 py-2.5 rounded-full font-black shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:bg-white hover:text-black transition-all text-xs md:text-sm uppercase tracking-widest active:scale-95"
           >
-            EXIT GAME
+            ✕ CLOSE
           </button>
           
           <button 
