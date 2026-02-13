@@ -154,6 +154,9 @@ test.describe('Vibeshift Tests', () => {
   });
 
   test('Scenario 3: Create Flow', async ({ page }) => {
+    // Increase timeout for AI generation
+    test.setTimeout(120000);
+    
     await page.goto('/create');
     await page.waitForLoadState('domcontentloaded');
     
@@ -161,7 +164,7 @@ test.describe('Vibeshift Tests', () => {
     await page.locator('button:has-text(\"Vibe Code\")').click();
 
     // Wait for debug info to show a URL (meaning generation finished)
-    await expect(page.locator('#debug-gameurl')).not.toHaveText('EMPTY', { timeout: 60000 });
+    await expect(page.locator('#debug-gameurl')).not.toHaveText('EMPTY', { timeout: 90000 });
     
     // Now publishing controls should appear
     const titleInput = page.locator('#game-title-input');
@@ -197,6 +200,9 @@ test.describe('Vibeshift Tests', () => {
   });
 
   test('Scenario 4: Remix Flow', async ({ page }) => {
+    // Increase timeout for AI generation
+    test.setTimeout(120000);
+
     // Mock the parent game for remixing
     await page.route('**/rest/v1/games?id=eq.parent-id', async route => {
       await route.fulfill({
@@ -222,7 +228,7 @@ test.describe('Vibeshift Tests', () => {
     // Wait for the button to have the correct text based on remixId presence
     await page.locator('button:has-text(\"Remix It\")').click();
 
-    await expect(page.locator('#debug-gameurl')).not.toHaveText('EMPTY', { timeout: 60000 });
+    await expect(page.locator('#debug-gameurl')).not.toHaveText('EMPTY', { timeout: 90000 });
     
     await page.evaluate(() => {
         // Stub window.alert to prevent blocking
